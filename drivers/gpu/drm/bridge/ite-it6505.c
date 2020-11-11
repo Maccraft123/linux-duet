@@ -2572,7 +2572,7 @@ static void it6505_bridge_disable(struct drm_bridge *bridge)
 static const struct drm_bridge_funcs it6505_bridge_funcs = {
 	.attach = it6505_bridge_attach,
 	.detach = it6505_bridge_detach,
-	.mode_valid = it6505_bridge_mode_valid,
+//	.mode_valid = it6505_bridge_mode_valid,
 	.mode_set = it6505_bridge_mode_set,
 	.enable = it6505_bridge_enable,
 	.disable = it6505_bridge_disable,

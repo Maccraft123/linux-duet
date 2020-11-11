@@ -209,6 +209,7 @@ struct mtk_dsi {
 	unsigned int lanes;
 	struct videomode vm;
 	struct mtk_phy_timing phy_timing;
+	int refcount;
 	bool enabled;
 	u32 irq_data;
 	wait_queue_head_t irq_wait_queue;
@@ -475,14 +476,13 @@ static void mtk_dsi_config_vdo_timing(struct mtk_dsi *dsi)
 	horizontal_sync_active_byte = (vm->hsync_len * dsi_tmp_buf_bpp - 10);
 
 	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE)
-		horizontal_backporch_byte =
-			(vm->hback_porch * dsi_tmp_buf_bpp - 10);
+		horizontal_backporch_byte = vm->hback_porch * dsi_tmp_buf_bpp;
 	else
-		horizontal_backporch_byte = ((vm->hback_porch + vm->hsync_len) *
-			dsi_tmp_buf_bpp - 10);
+		horizontal_backporch_byte = (vm->hback_porch + vm->hsync_len) *
+					    dsi_tmp_buf_bpp;
 
 	data_phy_cycles = timing->lpx + timing->da_hs_prepare +
-			  timing->da_hs_zero + timing->da_hs_exit + 3;
+			  timing->da_hs_zero + timing->da_hs_exit;
 
 	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO_BURST) {
 		if ((vm->hfront_porch + vm->hback_porch) * dsi_tmp_buf_bpp >
@@ -630,9 +630,10 @@ static s32 mtk_dsi_switch_to_cmd_mode(struct mtk_dsi *dsi, u8 irq_flag, u32 t)
 	}
 }
 
-static int mtk_dsi_resume(struct device *dev)
+static int mtk_dsi_poweron(struct mtk_dsi *dsi)
 {
-	struct mtk_dsi *dsi = dev_get_drvdata(dev);
+	//struct mtk_dsi *dsi = dev_get_drvdata(dev);
+	struct device *dev = dsi->host.dev;
 	int ret;
 	u32 bit_per_pixel;
 
@@ -695,7 +696,6 @@ static int mtk_dsi_resume(struct device *dev)
 	mtk_dsi_clk_hs_mode(dsi, 0);
 
 	return 0;
-
 err_disable_engine_clk:
 	clk_disable_unprepare(dsi->engine_clk);
 err_phy_power_off:
@@ -703,10 +703,24 @@ err_phy_power_off:
 	return ret;
 }
 
-static int mtk_dsi_suspend(struct device *dev)
+static int mtk_dsi_poweroff(struct mtk_dsi *dsi)
 {
-	struct mtk_dsi *dsi = dev_get_drvdata(dev);
+	if (WARN_ON(dsi->refcount == 0))
+		return;
 
+	if (--dsi->refcount != 0)
+		return;
+
+	/*
+	 * mtk_dsi_stop() and mtk_dsi_start() is asymmetric, since
+	 * mtk_dsi_stop() should be called after mtk_drm_crtc_atomic_disable(),
+	 * which needs irq for vblank, and mtk_dsi_stop() will disable irq.
+	 * mtk_dsi_start() needs to be called in mtk_output_dsi_enable(),
+	 * after dsi is fully set.
+	 */
+	//mtk_dsi_stop(dsi);
+
+	//mtk_dsi_switch_to_cmd_mode(dsi, VM_DONE_INT_FLAG, 500);
 	mtk_dsi_reset_engine(dsi);
 	mtk_dsi_lane0_ulp_mode_enter(dsi);
 	mtk_dsi_clk_ulp_mode_enter(dsi);
@@ -722,13 +736,15 @@ static int mtk_dsi_suspend(struct device *dev)
 }
 
 static void mtk_output_dsi_enable(struct mtk_dsi *dsi)
+
 {
 	int ret;
 
 	if (dsi->enabled)
 		return;
 
-	ret = pm_runtime_get_sync(dsi->host.dev);
+	//ret = pm_runtime_get_sync(dsi->host.dev);
+	ret = mtk_dsi_poweron(dsi);
 	if (ret < 0) {
 		DRM_ERROR("failed to power on dsi\n");
 		return;
@@ -752,6 +768,7 @@ static void mtk_output_dsi_disable(struct mtk_dsi *dsi)
 	mtk_dsi_switch_to_cmd_mode(dsi, VM_DONE_INT_FLAG, 500);
 
 	pm_runtime_put(dsi->host.dev);
+	mtk_dsi_poweroff(dsi);
 
 	dsi->enabled = false;
 }
@@ -800,14 +817,16 @@ static void mtk_dsi_ddp_start(struct mtk_ddp_comp *comp)
 {
 	struct mtk_dsi *dsi = container_of(comp, struct mtk_dsi, ddp_comp);
 
-	pm_runtime_get(dsi->host.dev);
+//	pm_runtime_get(dsi->host.dev);
+	mtk_dsi_poweron(dsi);
 }
 
 static void mtk_dsi_ddp_stop(struct mtk_ddp_comp *comp)
 {
 	struct mtk_dsi *dsi = container_of(comp, struct mtk_dsi, ddp_comp);
 
-	pm_runtime_put(dsi->host.dev);
+//	pm_runtime_put(dsi->host.dev);
+	mtk_dsi_poweroff(dsi);
 }
 
 static const struct mtk_ddp_comp_funcs mtk_dsi_funcs = {
@@ -1266,7 +1285,7 @@ static const struct of_device_id mtk_dsi_of_match[] = {
 	{ },
 };
 
-UNIVERSAL_DEV_PM_OPS(mtk_dsi_pm_ops, mtk_dsi_suspend, mtk_dsi_resume, NULL);
+//UNIVERSAL_DEV_PM_OPS(mtk_dsi_pm_ops, mtk_dsi_suspend, mtk_dsi_resume, NULL);
 
 struct platform_driver mtk_dsi_driver = {
 	.probe = mtk_dsi_probe,
@@ -1274,6 +1293,6 @@ struct platform_driver mtk_dsi_driver = {
 	.driver = {
 		.name = "mtk-dsi",
 		.of_match_table = mtk_dsi_of_match,
-		.pm = &mtk_dsi_pm_ops,
+//		.pm = &mtk_dsi_pm_ops,
 	},
 };

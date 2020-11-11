@@ -430,6 +430,7 @@ int mtk_ddp_comp_get_id(struct device_node *node,
 int mtk_ddp_comp_init(struct device *dev, struct device_node *node,
 		      struct mtk_ddp_comp *comp, enum mtk_ddp_comp_id comp_id,
 		      const struct mtk_ddp_comp_funcs *funcs)
+//		      enum mtk_ddp_comp_type comp_type)
 {
 	enum mtk_ddp_comp_type type;
 #if IS_REACHABLE(CONFIG_MTK_CMDQ)
@@ -472,11 +473,12 @@ int mtk_ddp_comp_init(struct device *dev, struct device_node *node,
 	    type != MTK_DISP_WDMA)
 		return 0;
 
-	comp->dev = dev;
+	comp->larb_dev = dev;
 
 #if IS_REACHABLE(CONFIG_MTK_CMDQ)
 	if (of_address_to_resource(node, 0, &res) != 0) {
 		dev_err(dev, "Missing reg in %s node\n", node->full_name);
+		put_device(dev);
 		return -EINVAL;
 	}
 	comp->regs_pa = res.start;

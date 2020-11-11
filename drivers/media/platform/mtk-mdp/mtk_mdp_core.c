@@ -51,18 +51,34 @@ MODULE_DEVICE_TABLE(of, mtk_mdp_of_ids);
 
 static void mtk_mdp_clock_on(struct mtk_mdp_dev *mdp)
 {
+<<<<<<< HEAD
 	struct mtk_mdp_comp *comp_node;
 
 	list_for_each_entry(comp_node, &mdp->comp_list, node)
 		mtk_mdp_comp_clock_on(comp_node);
+=======
+	struct device *dev = &mdp->pdev->dev;
+	struct mtk_mdp_comp *comp_node;
+
+	list_for_each_entry(comp_node, &mdp->comp_list, node)
+		mtk_mdp_comp_clock_on(dev, comp_node);
+>>>>>>> v5.9.2
 }
 
 static void mtk_mdp_clock_off(struct mtk_mdp_dev *mdp)
 {
+<<<<<<< HEAD
 	struct mtk_mdp_comp *comp_node;
 
 	list_for_each_entry(comp_node, &mdp->comp_list, node)
 		mtk_mdp_comp_clock_off(comp_node);
+=======
+	struct device *dev = &mdp->pdev->dev;
+	struct mtk_mdp_comp *comp_node;
+
+	list_for_each_entry(comp_node, &mdp->comp_list, node)
+		mtk_mdp_comp_clock_off(dev, comp_node);
+>>>>>>> v5.9.2
 }
 
 static void mtk_mdp_wdt_worker(struct work_struct *work)
@@ -86,6 +102,7 @@ static void mtk_mdp_reset_handler(void *priv)
 	queue_work(mdp->wdt_wq, &mdp->wdt_work);
 }
 
+<<<<<<< HEAD
 static int compare_of(struct device *dev, void *data)
 {
 	return dev->of_node == data;
@@ -148,6 +165,12 @@ void mtk_mdp_register_component(struct mtk_mdp_dev *mdp,
 				struct mtk_mdp_comp *comp)
 {
 	list_add(&mdp->comp_list, &comp->node);
+=======
+void mtk_mdp_register_component(struct mtk_mdp_dev *mdp,
+				struct mtk_mdp_comp *comp)
+{
+	list_add(&comp->node, &mdp->comp_list);
+>>>>>>> v5.9.2
 }
 
 void mtk_mdp_unregister_component(struct mtk_mdp_dev *mdp,
@@ -161,8 +184,13 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 	struct mtk_mdp_dev *mdp;
 	struct device *dev = &pdev->dev;
 	struct device_node *node, *parent;
+<<<<<<< HEAD
 	int i, ret = 0;
 	struct component_match *match = NULL;
+=======
+	struct mtk_mdp_comp *comp, *comp_temp;
+	int ret = 0;
+>>>>>>> v5.9.2
 
 	mdp = devm_kzalloc(dev, sizeof(*mdp), GFP_KERNEL);
 	if (!mdp)
@@ -189,7 +217,12 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 	/* Iterate over sibling MDP function blocks */
 	i = 0;
 	for_each_child_of_node(parent, node) {
+<<<<<<< HEAD
 		struct platform_device *pdev;
+=======
+		const struct of_device_id *of_id;
+		enum mtk_mdp_comp_type comp_type;
+>>>>>>> v5.9.2
 
 		if (!of_match_node(mtk_mdp_comp_dt_ids, node))
 			continue;
@@ -197,12 +230,16 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 		if (!of_device_is_available(node))
 			continue;
 
+<<<<<<< HEAD
 		pdev = of_find_device_by_node(node);
 		if (!pdev) {
 			dev_warn(dev, "Unable to find comp device %s\n",
 				 node->full_name);
 			continue;
 		}
+=======
+		comp_type = (enum mtk_mdp_comp_type)of_id->data;
+>>>>>>> v5.9.2
 
 		/*
 		 * Do not add add a match for my own (rdma0) device node.
@@ -214,6 +251,7 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 						    compare_of,
 						    of_node_get(node));
 		}
+<<<<<<< HEAD
 	}
 
 	/*
@@ -224,6 +262,16 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_err(dev, "Failed to initialize component\n");
 		goto err_comp;
+=======
+
+		ret = mtk_mdp_comp_init(dev, node, comp, comp_type);
+		if (ret) {
+			of_node_put(node);
+			goto err_comp;
+		}
+
+		mtk_mdp_register_component(mdp, comp);
+>>>>>>> v5.9.2
 	}
 
 	mdp->job_wq = create_singlethread_workqueue(MTK_MDP_MODULE_NAME);
@@ -256,11 +304,23 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 		goto err_wdt_reg;
 	}
 
+<<<<<<< HEAD
+=======
+	mdp->vpu_dev = vpu_get_plat_device(pdev);
+	ret = vpu_wdt_reg_handler(mdp->vpu_dev, mtk_mdp_reset_handler, mdp,
+				  VPU_RST_MDP);
+	if (ret) {
+		dev_err(&pdev->dev, "Failed to register reset handler\n");
+		goto err_m2m_register;
+	}
+
+>>>>>>> v5.9.2
 	platform_set_drvdata(pdev, mdp);
 
 	ret = vb2_dma_contig_set_max_seg_size(&pdev->dev, DMA_BIT_MASK(32));
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to set vb2 dma mag seg size\n");
+<<<<<<< HEAD
 		goto err_set_max_seg_size;
 	}
 
@@ -268,6 +328,9 @@ static int mtk_mdp_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_err(dev, "Component master add failed\n");
 		goto err_component_master_add;
+=======
+		goto err_m2m_register;
+>>>>>>> v5.9.2
 	}
 
 	dev_dbg(dev, "mdp-%d registered successfully\n", mdp->id);
@@ -291,6 +354,14 @@ err_alloc_wdt_wq:
 err_alloc_job_wq:
 
 err_comp:
+<<<<<<< HEAD
+=======
+	list_for_each_entry_safe(comp, comp_temp, &mdp->comp_list, node) {
+		mtk_mdp_unregister_component(mdp, comp);
+		mtk_mdp_comp_deinit(dev, comp);
+	}
+
+>>>>>>> v5.9.2
 	dev_dbg(dev, "err %d\n", ret);
 	return ret;
 }
@@ -298,6 +369,10 @@ err_comp:
 static int mtk_mdp_remove(struct platform_device *pdev)
 {
 	struct mtk_mdp_dev *mdp = platform_get_drvdata(pdev);
+<<<<<<< HEAD
+=======
+	struct mtk_mdp_comp *comp, *comp_temp;
+>>>>>>> v5.9.2
 
 	component_master_del(&pdev->dev, &mtk_mdp_com_ops);
 
@@ -310,8 +385,15 @@ static int mtk_mdp_remove(struct platform_device *pdev)
 	flush_workqueue(mdp->job_wq);
 	destroy_workqueue(mdp->job_wq);
 
+<<<<<<< HEAD
 	if (!list_empty(&mdp->comp_list))
 		dev_err(&pdev->dev, "not all components removed\n");
+=======
+	list_for_each_entry_safe(comp, comp_temp, &mdp->comp_list, node) {
+		mtk_mdp_unregister_component(mdp, comp);
+		mtk_mdp_comp_deinit(&pdev->dev, comp);
+	}
+>>>>>>> v5.9.2
 
 	dev_dbg(&pdev->dev, "%s driver unloaded\n", pdev->name);
 	return 0;

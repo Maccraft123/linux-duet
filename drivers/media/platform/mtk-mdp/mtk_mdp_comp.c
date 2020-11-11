@@ -17,6 +17,7 @@
 #include <linux/pm_runtime.h>
 
 #include "mtk_mdp_comp.h"
+<<<<<<< HEAD
 #include "mtk_mdp_core.h"
 
 /**
@@ -62,15 +63,36 @@ void mtk_mdp_comp_clock_on(struct mtk_mdp_comp *comp)
 		dev_err(comp->dev,
 			"failed to runtime get, err %d.\n",
 			err);
+=======
+
+
+void mtk_mdp_comp_clock_on(struct device *dev, struct mtk_mdp_comp *comp)
+{
+	int i, err;
+
+	if (comp->larb_dev) {
+		err = mtk_smi_larb_get(comp->larb_dev);
+		if (err)
+			dev_err(dev,
+				"failed to get larb, err %d. type:%d\n",
+				err, comp->type);
+	}
+>>>>>>> v5.9.2
 
 	for (i = 0; i < ARRAY_SIZE(comp->clk); i++) {
 		if (IS_ERR(comp->clk[i]))
 			continue;
 		err = clk_prepare_enable(comp->clk[i]);
 		if (err)
+<<<<<<< HEAD
 			dev_err(comp->dev,
 				"failed to enable clock, err %d. i:%d\n",
 				err, i);
+=======
+			dev_err(dev,
+			"failed to enable clock, err %d. type:%d i:%d\n",
+				err, comp->type, i);
+>>>>>>> v5.9.2
 	}
 }
 
@@ -87,6 +109,7 @@ void mtk_mdp_comp_clock_off(struct mtk_mdp_comp *comp)
 	pm_runtime_put_sync(comp->dev);
 }
 
+<<<<<<< HEAD
 static int mtk_mdp_comp_bind(struct device *dev, struct device *master,
 			void *data)
 {
@@ -123,14 +146,27 @@ int mtk_mdp_comp_init(struct mtk_mdp_comp *comp, struct device *dev)
 
 	INIT_LIST_HEAD(&comp->node);
 	comp->dev = dev;
+=======
+int mtk_mdp_comp_init(struct device *dev, struct device_node *node,
+		      struct mtk_mdp_comp *comp,
+		      enum mtk_mdp_comp_type comp_type)
+{
+	struct device_node *larb_node;
+	struct platform_device *larb_pdev;
+	int ret;
+	int i;
+
+	comp->dev_node = of_node_get(node);
+	comp->type = comp_type;
+>>>>>>> v5.9.2
 
 	for (i = 0; i < ARRAY_SIZE(comp->clk); i++) {
 		comp->clk[i] = of_clk_get(node, i);
 		if (IS_ERR(comp->clk[i])) {
 			if (PTR_ERR(comp->clk[i]) != -EPROBE_DEFER)
 				dev_err(dev, "Failed to get clock\n");
-
-			return PTR_ERR(comp->clk[i]);
+			ret = PTR_ERR(comp->clk[i]);
+			goto put_dev;
 		}
 
 		/* Only RDMA needs two clocks */
@@ -138,6 +174,7 @@ int mtk_mdp_comp_init(struct mtk_mdp_comp *comp, struct device *dev)
 			break;
 	}
 
+<<<<<<< HEAD
 	return 0;
 }
 
@@ -169,11 +206,43 @@ static int mtk_mdp_comp_probe(struct platform_device *pdev)
 	if (status) {
 		dev_err(dev, "Failed to initialize component: %d\n", status);
 		return status;
+=======
+	/* Only DMA capable components need the LARB property */
+	comp->larb_dev = NULL;
+	if (comp->type != MTK_MDP_RDMA &&
+	    comp->type != MTK_MDP_WDMA &&
+	    comp->type != MTK_MDP_WROT)
+		return 0;
+
+	larb_node = of_parse_phandle(node, "mediatek,larb", 0);
+	if (!larb_node) {
+		dev_err(dev,
+			"Missing mediadek,larb phandle in %pOF node\n", node);
+		ret = -EINVAL;
+		goto put_dev;
+	}
+
+	larb_pdev = of_find_device_by_node(larb_node);
+	if (!larb_pdev) {
+		dev_warn(dev, "Waiting for larb device %pOF\n", larb_node);
+		of_node_put(larb_node);
+		ret = -EPROBE_DEFER;
+		goto put_dev;
+>>>>>>> v5.9.2
 	}
 
 	dev_set_drvdata(dev, comp);
 
+<<<<<<< HEAD
 	return component_add(dev, &mtk_mdp_component_ops);
+=======
+	return 0;
+
+put_dev:
+	of_node_put(comp->dev_node);
+
+	return ret;
+>>>>>>> v5.9.2
 }
 
 static int mtk_mdp_comp_remove(struct platform_device *pdev)
