@@ -5,7 +5,6 @@
 #include <asm/fpu/internal.h>
 #include <asm/tlbflush.h>
 #include <asm/setup.h>
-#include <asm/cmdline.h>
 
 #include <linux/sched.h>
 #include <linux/sched/task.h>
@@ -238,6 +237,7 @@ static void __init fpu__init_system_ctx_switch(void)
 }
 
 /*
+<<<<<<< HEAD
  * We parse fpu parameters early because fpu__init_system() is executed
  * before parse_early_param().
  */
@@ -291,12 +291,13 @@ static void __init fpu__init_parse_early_param(void)
 }
 
 /*
+=======
+>>>>>>> v5.10-rc1
  * Called on the boot CPU once per system bootup, to set up the initial
  * FPU state that is later cloned into all processes:
  */
 void __init fpu__init_system(struct cpuinfo_x86 *c)
 {
-	fpu__init_parse_early_param();
 	fpu__init_system_early_generic(c);
 
 	/*

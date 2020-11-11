@@ -494,6 +494,7 @@ reset:
 	}
 }
 
+<<<<<<< HEAD
 static bool dar_in_user_range(unsigned long dar, struct arch_hw_breakpoint *info)
 {
 	return ((info->address <= dar) && (dar - info->address < info->len));
@@ -649,6 +650,8 @@ static void get_instr_detail(struct pt_regs *regs, struct ppc_inst *instr,
 	}
 }
 
+=======
+>>>>>>> v5.10-rc1
 static bool is_larx_stcx_instr(int type)
 {
 	return type == LARX || type == STCX;
@@ -732,7 +735,7 @@ int hw_breakpoint_handler(struct die_args *args)
 	rcu_read_lock();
 
 	if (!IS_ENABLED(CONFIG_PPC_8xx))
-		get_instr_detail(regs, &instr, &type, &size, &ea);
+		wp_get_instr_detail(regs, &instr, &type, &size, &ea);
 
 	for (i = 0; i < nr_wp_slots(); i++) {
 		bp[i] = __this_cpu_read(bp_per_reg[i]);
@@ -742,7 +745,7 @@ int hw_breakpoint_handler(struct die_args *args)
 		info[i] = counter_arch_bp(bp[i]);
 		info[i]->type &= ~HW_BRK_TYPE_EXTRANEOUS_IRQ;
 
-		if (check_constraints(regs, instr, ea, type, size, info[i])) {
+		if (wp_check_constraints(regs, instr, ea, type, size, info[i])) {
 			if (!IS_ENABLED(CONFIG_PPC_8xx) &&
 			    ppc_inst_equal(instr, ppc_inst(0))) {
 				handler_error(bp[i], info[i]);

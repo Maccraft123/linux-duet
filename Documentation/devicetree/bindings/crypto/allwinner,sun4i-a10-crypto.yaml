@@ -24,6 +24,12 @@ properties:
           - const: allwinner,sun7i-a20-crypto
           - const: allwinner,sun4i-a10-crypto
       - const: allwinner,sun8i-a33-crypto
+<<<<<<< HEAD
+=======
+      - items:
+          - const: allwinner,sun8i-v3s-crypto
+          - const: allwinner,sun8i-a33-crypto
+>>>>>>> v5.10-rc1
 
   reg:
     maxItems: 1

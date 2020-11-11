@@ -271,10 +271,13 @@ static inline struct net_device **get_dev_p(struct pvc_device *pvc,
 }
 
 
-static int fr_hard_header(struct sk_buff **skb_p, u16 dlci)
+static int fr_hard_header(struct sk_buff *skb, u16 dlci)
 {
+<<<<<<< HEAD
 	struct sk_buff *skb = *skb_p;
 
+=======
+>>>>>>> v5.10-rc1
 	if (!skb->dev) { /* Control packets */
 		switch (dlci) {
 		case LMI_CCITT_ANSI_DLCI:
@@ -289,6 +292,7 @@ static int fr_hard_header(struct sk_buff **skb_p, u16 dlci)
 
 		default:
 			return -EINVAL;
+<<<<<<< HEAD
 		}
 
 	} else if (skb->dev->type == ARPHRD_DLCI) {
@@ -323,6 +327,35 @@ static int fr_hard_header(struct sk_buff **skb_p, u16 dlci)
 			dev_kfree_skb(skb);
 			skb = *skb_p = skb2;
 		}
+=======
+		}
+
+	} else if (skb->dev->type == ARPHRD_DLCI) {
+		switch (skb->protocol) {
+		case htons(ETH_P_IP):
+			skb_push(skb, 4);
+			skb->data[3] = NLPID_IP;
+			break;
+
+		case htons(ETH_P_IPV6):
+			skb_push(skb, 4);
+			skb->data[3] = NLPID_IPV6;
+			break;
+
+		default:
+			skb_push(skb, 10);
+			skb->data[3] = FR_PAD;
+			skb->data[4] = NLPID_SNAP;
+			/* OUI 00-00-00 indicates an Ethertype follows */
+			skb->data[5] = 0x00;
+			skb->data[6] = 0x00;
+			skb->data[7] = 0x00;
+			/* This should be an Ethertype: */
+			*(__be16 *)(skb->data + 8) = skb->protocol;
+		}
+
+	} else if (skb->dev->type == ARPHRD_ETHER) {
+>>>>>>> v5.10-rc1
 		skb_push(skb, 10);
 		skb->data[3] = FR_PAD;
 		skb->data[4] = NLPID_SNAP;
@@ -416,6 +449,7 @@ static netdev_tx_t pvc_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct pvc_device *pvc = dev->ml_priv;
 
+<<<<<<< HEAD
 	if (pvc->state.active) {
 		if (dev->type == ARPHRD_ETHER) {
 			int pad = ETH_ZLEN - skb->len;
@@ -443,11 +477,51 @@ static netdev_tx_t pvc_xmit(struct sk_buff *skb, struct net_device *dev)
 			skb_reset_network_header(skb);
 			dev_queue_xmit(skb);
 			return NETDEV_TX_OK;
+=======
+	if (!pvc->state.active)
+		goto drop;
+
+	if (dev->type == ARPHRD_ETHER) {
+		int pad = ETH_ZLEN - skb->len;
+
+		if (pad > 0) { /* Pad the frame with zeros */
+			if (__skb_pad(skb, pad, false))
+				goto drop;
+			skb_put(skb, pad);
+>>>>>>> v5.10-rc1
 		}
 	}
 
+	/* We already requested the header space with dev->needed_headroom.
+	 * So this is just a protection in case the upper layer didn't take
+	 * dev->needed_headroom into consideration.
+	 */
+	if (skb_headroom(skb) < 10) {
+		struct sk_buff *skb2 = skb_realloc_headroom(skb, 10);
+
+		if (!skb2)
+			goto drop;
+		dev_kfree_skb(skb);
+		skb = skb2;
+	}
+
+	skb->dev = dev;
+	if (fr_hard_header(skb, pvc->dlci))
+		goto drop;
+
+	dev->stats.tx_bytes += skb->len;
+	dev->stats.tx_packets++;
+	if (pvc->state.fecn) /* TX Congestion counter */
+		dev->stats.tx_compressed++;
+	skb->dev = pvc->frad;
+	skb->protocol = htons(ETH_P_HDLC);
+	skb_reset_network_header(skb);
+	dev_queue_xmit(skb);
+	return NETDEV_TX_OK;
+
+drop:
 	dev->stats.tx_dropped++;
-	dev_kfree_skb(skb);
+	kfree_skb(skb);
 	return NETDEV_TX_OK;
 }
 
@@ -500,9 +574,15 @@ static void fr_lmi_send(struct net_device *dev, int fullrep)
 	memset(skb->data, 0, len);
 	skb_reserve(skb, 4);
 	if (lmi == LMI_CISCO) {
+<<<<<<< HEAD
 		fr_hard_header(&skb, LMI_CISCO_DLCI);
 	} else {
 		fr_hard_header(&skb, LMI_CCITT_ANSI_DLCI);
+=======
+		fr_hard_header(skb, LMI_CISCO_DLCI);
+	} else {
+		fr_hard_header(skb, LMI_CCITT_ANSI_DLCI);
+>>>>>>> v5.10-rc1
 	}
 	data = skb_tail_pointer(skb);
 	data[i++] = LMI_CALLREF;

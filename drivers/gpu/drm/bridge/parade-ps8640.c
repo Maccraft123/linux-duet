@@ -102,6 +102,7 @@ static void ps8640_bridge_poweron(struct ps8640 *ps_bridge)
 	if (ps_bridge->powered)
 		return;
 
+<<<<<<< HEAD
 	/*
 	 * That seems to be specific to this chip, and a weird behaviour, but
 	 * we need to call drm_panel_prepare before issuing a poweron cycle. If
@@ -111,6 +112,8 @@ static void ps8640_bridge_poweron(struct ps8640 *ps_bridge)
 	if (panel->funcs && panel->funcs->pre_enable)
 		panel->funcs->pre_enable(panel);
 
+=======
+>>>>>>> v5.10-rc1
 	ret = regulator_bulk_enable(ARRAY_SIZE(ps_bridge->supplies),
 				    ps_bridge->supplies);
 	if (ret < 0) {
@@ -165,10 +168,13 @@ static void ps8640_bridge_poweron(struct ps8640 *ps_bridge)
 		goto err_regulators_disable;
 	}
 
+<<<<<<< HEAD
 	ret = ps8640_bridge_vdo_control(ps_bridge, ENABLE);
 	if (ret)
 		goto err_regulators_disable;
 
+=======
+>>>>>>> v5.10-rc1
 	/* Switch access edp panel's edid through i2c */
 	ret = i2c_smbus_write_byte_data(client, PAGE2_I2C_BYPASS,
 					I2C_BYPASS_EN);
@@ -188,7 +194,10 @@ err_regulators_disable:
 
 static void ps8640_bridge_poweroff(struct ps8640 *ps_bridge)
 {
+<<<<<<< HEAD
 	struct drm_bridge *panel;
+=======
+>>>>>>> v5.10-rc1
 	int ret;
 
 	if (!ps_bridge->powered)
@@ -201,10 +210,13 @@ static void ps8640_bridge_poweroff(struct ps8640 *ps_bridge)
 	if (ret < 0)
 		DRM_ERROR("cannot disable regulators %d\n", ret);
 
+<<<<<<< HEAD
 	panel = ps_bridge->panel_bridge;
 	if (panel->funcs && panel->funcs->post_disable)
 		panel->funcs->post_disable(panel);
 
+=======
+>>>>>>> v5.10-rc1
 	ps_bridge->powered = false;
 }
 
@@ -215,7 +227,11 @@ static void ps8640_pre_enable(struct drm_bridge *bridge)
 
 	ps8640_bridge_poweron(ps_bridge);
 
+<<<<<<< HEAD
 	ret = ps8640_bridge_vdo_control(ps_bridge, DISABLE);
+=======
+	ret = ps8640_bridge_vdo_control(ps_bridge, ENABLE);
+>>>>>>> v5.10-rc1
 	if (ret < 0)
 		ps8640_bridge_poweroff(ps_bridge);
 }
@@ -306,7 +322,11 @@ static struct edid *ps8640_bridge_get_edid(struct drm_bridge *bridge,
 	 * EDID, for this chip, we need to do a full poweron, otherwise it will
 	 * fail.
 	 */
+<<<<<<< HEAD
 	ps8640_bridge_poweron(ps_bridge);
+=======
+	drm_bridge_chain_pre_enable(bridge);
+>>>>>>> v5.10-rc1
 
 	edid = drm_get_edid(connector,
 			    ps_bridge->page[PAGE0_DP_CNTL]->adapter);
@@ -316,7 +336,11 @@ static struct edid *ps8640_bridge_get_edid(struct drm_bridge *bridge,
 	 * before, return the chip to its original power state.
 	 */
 	if (poweroff)
+<<<<<<< HEAD
 		ps8640_bridge_poweroff(ps_bridge);
+=======
+		drm_bridge_chain_post_disable(bridge);
+>>>>>>> v5.10-rc1
 
 	return edid;
 }

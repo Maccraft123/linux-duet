@@ -30,10 +30,6 @@
 # include "test-libelf.c"
 #undef main
 
-#define main main_test_libelf_mmap
-# include "test-libelf-mmap.c"
-#undef main
-
 #define main main_test_get_current_dir_name
 # include "test-get_current_dir_name.c"
 #undef main
@@ -80,6 +76,10 @@
 
 #define main main_test_libbfd
 # include "test-libbfd.c"
+#undef main
+
+#define main main_test_libbfd_buildid
+# include "test-libbfd-buildid.c"
 #undef main
 
 #define main main_test_backtrace
@@ -198,6 +198,7 @@ int main(int argc, char *argv[])
 	main_test_libunwind();
 	main_test_libslang();
 	main_test_libbfd();
+	main_test_libbfd_buildid();
 	main_test_backtrace();
 	main_test_libnuma();
 	main_test_numa_num_possible_cpus();

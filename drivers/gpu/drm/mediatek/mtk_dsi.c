@@ -703,7 +703,7 @@ err_phy_power_off:
 	return ret;
 }
 
-static int mtk_dsi_poweroff(struct mtk_dsi *dsi)
+static void mtk_dsi_poweroff(struct mtk_dsi *dsi)
 {
 	if (WARN_ON(dsi->refcount == 0))
 		return;
@@ -731,8 +731,6 @@ static int mtk_dsi_poweroff(struct mtk_dsi *dsi)
 	clk_disable_unprepare(dsi->digital_clk);
 
 	phy_power_off(dsi->phy);
-
-	return 0;
 }
 
 static void mtk_output_dsi_enable(struct mtk_dsi *dsi)
@@ -1033,11 +1031,7 @@ static int mtk_dsi_encoder_init(struct drm_device *drm, struct mtk_dsi *dsi)
 		return ret;
 	}
 
-	/*
-	 * Currently display data paths are statically assigned to a crtc each.
-	 * crtc 0 is OVL0 -> COLOR0 -> AAL -> OD -> RDMA0 -> UFOE -> DSI0
-	 */
-	dsi->encoder.possible_crtcs = 1;
+	dsi->encoder.possible_crtcs = mtk_drm_find_possible_crtc_by_comp(drm, dsi->ddp_comp);
 
 	ret = drm_bridge_attach(&dsi->encoder, &dsi->bridge, NULL,
 				DRM_BRIDGE_ATTACH_NO_CONNECTOR);
