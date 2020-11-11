@@ -10,6 +10,11 @@
 #
 # Normal rules (sorted alphabetically)
 #
+#
+vmlinux.kpart
+cmdline
+kernel.its
+vmlinux.uimg
 .*
 *.a
 *.asn1.[ch]
