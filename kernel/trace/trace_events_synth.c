@@ -586,9 +586,13 @@ static struct synth_field *parse_synth_field(int argc, const char **argv,
 	const char *prefix = NULL, *field_type = argv[0], *field_name, *array;
 	int len, ret = 0;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	struct seq_buf s;
 =======
 >>>>>>> v5.10-rc1
+=======
+	struct seq_buf s;
+>>>>>>> v5.10-rc2
 	ssize_t size;
 
 	if (field_type[0] == ';')
@@ -635,6 +639,7 @@ static struct synth_field *parse_synth_field(int argc, const char **argv,
 	len = strlen(field_type) + 1;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	if (array)
 		len += strlen(array);
 
@@ -647,6 +652,11 @@ static struct synth_field *parse_synth_field(int argc, const char **argv,
                 len += l;
         }
 >>>>>>> v5.10-rc1
+=======
+	if (array)
+		len += strlen(array);
+
+>>>>>>> v5.10-rc2
 	if (prefix)
 		len += strlen(prefix);
 
@@ -681,14 +691,21 @@ static struct synth_field *parse_synth_field(int argc, const char **argv,
 		if (synth_field_is_string(field->type)) {
 			char *type;
 
-			type = kzalloc(sizeof("__data_loc ") + strlen(field->type) + 1, GFP_KERNEL);
+			len = sizeof("__data_loc ") + strlen(field->type) + 1;
+			type = kzalloc(len, GFP_KERNEL);
 			if (!type) {
 				ret = -ENOMEM;
 				goto free;
 			}
 
-			strcat(type, "__data_loc ");
-			strcat(type, field->type);
+			seq_buf_init(&s, type, len);
+			seq_buf_puts(&s, "__data_loc ");
+			seq_buf_puts(&s, field->type);
+
+			if (WARN_ON_ONCE(!seq_buf_buffer_left(&s)))
+				goto free;
+			s.buffer[s.len] = '\0';
+
 			kfree(field->type);
 			field->type = type;
 

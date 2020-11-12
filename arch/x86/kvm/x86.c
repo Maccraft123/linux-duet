@@ -270,15 +270,11 @@ static int kvm_msr_ignored_check(struct kvm_vcpu *vcpu, u32 msr,
 		/* Mask the error */
 		return 0;
 	} else {
-<<<<<<< HEAD
-		kvm_debug_ratelimited("unhandled %s: 0x%x data 0x%llx\n",
-				      op, msr, data);
-		return 1;
-=======
 		vcpu_debug_ratelimited(vcpu, "unhandled %s: 0x%x data 0x%llx\n",
 				       op, msr, data);
+		kvm_debug_ratelimited("unhandled %s: 0x%x data 0x%llx\n",
+				      op, msr, data);
 		return -ENOENT;
->>>>>>> v5.10-rc1
 	}
 }
 
