@@ -158,3 +158,4 @@ config SND_SOC_MTK_BTCVSD
 	  BT encoded data to/from BT firmware.
 	  Select Y if you have such device.
 	  If unsure select "N".
+
