@@ -11,10 +11,9 @@
 # Normal rules (sorted alphabetically)
 #
 #
-vmlinux.kpart
 cmdline
 kernel.its
-vmlinux.uimg
+vmlinux*
 .*
 *.a
 *.asn1.[ch]
