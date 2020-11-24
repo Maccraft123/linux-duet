@@ -12,8 +12,8 @@
 #
 #
 cmdline
-kernel.its
-vmlinux*
+/kernel.its
+/vmlinux*
 .*
 *.a
 *.asn1.[ch]
