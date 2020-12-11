@@ -13,7 +13,7 @@
 #
 cmdline
 /kernel.its
-/vmlinux*
+vmlinux.uimg
 .*
 *.a
 *.asn1.[ch]
